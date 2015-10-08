@@ -9,7 +9,8 @@ require_once 'Interface.php';
 
 class HttpCurl implements HttpCurlInterface
 {
-    private $config = array();
+    /** @var Config */
+    private $config;
     private $header = false;
     private $accessToken = null;
     
@@ -50,23 +51,23 @@ class HttpCurl implements HttpCurlInterface
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_PORT, 443);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $this->config['ssl_verify']);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $this->config->isSslVerify());
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         
-        if (!is_null($this->config['cabundle_file'])) {
-            curl_setopt($ch, CURLOPT_CAINFO, $this->config['cabundle_file']);
+        if (!is_null($this->config->getCabundleFile())) {
+            curl_setopt($ch, CURLOPT_CAINFO, $this->config->getCabundleFile());
         }
         
         if (!empty($userAgent))
             curl_setopt($ch, CURLOPT_USERAGENT, $userAgent);
         
-        if ($this->config['proxy_host'] != null && $this->config['proxy_port'] != -1) {
-            curl_setopt($ch, CURLOPT_PROXY, $this->config['proxy_host'] . ':' . $this->config['proxy_port']);
+        if ($this->config->getProxyHost() != null && $this->config->getProxyPort() != -1) {
+            curl_setopt($ch, CURLOPT_PROXY, $this->config->getProxyHost() . ':' . $this->config->getProxyPort());
         }
         
-        if ($this->config['proxy_username'] != null && $this->config['proxy_password'] != null) {
-            curl_setopt($ch, CURLOPT_PROXYUSERPWD, $this->config['proxy_username'] . ':' . $this->config['proxy_password']);
+        if ($this->config->getProxyUsername() != null && $this->config->getProxyPassword() != null) {
+            curl_setopt($ch, CURLOPT_PROXYUSERPWD, $this->config->getProxyUsername() . ':' . $this->config->getProxyPassword());
         }
         
         return $ch;

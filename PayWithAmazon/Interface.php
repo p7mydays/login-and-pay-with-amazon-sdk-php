@@ -10,7 +10,7 @@ interface ClientInterface
      * Validates the user configuation array against existing config array
      */
     
-    public function __construct($config = null);
+    public function __construct(Config $config);
     
     /* Setter for sandbox
      * Sets the boolean value for config['sandbox'] variable
@@ -39,12 +39,6 @@ interface ClientInterface
      */
     
     public function setMwsServiceUrl($url);
-    
-    /* Getter
-     * Gets the value for the key if the key exists in config
-     */
-    
-    public function __get($name);
     
     /* Getter for parameters string
      * Gets the value for the parameters string for unit testing

@@ -1,4 +1,5 @@
 <?php
+
 namespace PayWithAmazon;
 
 /* Class Client
@@ -24,26 +25,12 @@ class Client implements ClientInterface
     private $mwsEndpointPath = null;
     private $mwsEndpointUrl = null;
     private $profileEndpoint = null;
-    private $config = array('merchant_id' 	   => null,
-			    'secret_key' 	   => null,
-			    'access_key' 	   => null,
-			    'region' 		   => null,
-			    'currency_code' 	   => null,
-			    'sandbox' 		   => false,
-			    'platform_id' 	   => null,
-			    'cabundle_file' 	   => null,
-			    'application_name'     => null,
-			    'application_version'  => null,
-			    'proxy_host' 	   => null,
-			    'proxy_port' 	   => -1,
-			    'proxy_username' 	   => null,
-			    'proxy_password' 	   => null,
-			    'client_id' 	   => null,
-			    'handle_throttle' 	   => true,
-			    'ssl_verify'           => true,
-			    );
-
     private $modePath = null;
+
+    /**
+     * @var Config
+     */
+    private $config;
 
     // Final URL to where the API parameters POST done, based off the config['region'] and respective $mwsServiceUrls
     private $mwsServiceUrl = null;
@@ -59,77 +46,69 @@ class Client implements ClientInterface
      * Validates the user configuration array against existing config array
      */
 
-    public function __construct($config = null)
+    public function __construct(Config $config)
     {
-	$this->getRegionUrls();
-        if (!is_null($config)) {
-
-            if (is_array($config)) {
-                $configArray = $config;
-            } elseif (!is_array($config)) {
-		$configArray = $this->checkIfFileExists($config);
-	    }
-
-	    if (is_array($configArray)) {
-                $this->checkConfigKeys($configArray);
-            } else {
-                throw new \Exception('$config is of the incorrect type ' . gettype($configArray) . ' and should be of the type array');
-            }
-        } else {
-	    throw new \Exception('$config cannot be null.');
-	}
+	    $this->getRegionUrls();
+        $this->config = $config;
     }
     
     /* Get the Region specific properties from the Regions class.*/
     
     private function getRegionUrls()
     {
-	$regionObject = new Regions();
-	$this->mwsServiceUrls = $regionObject->mwsServiceUrls;
-	$this->regionMappings = $regionObject->regionMappings;
-	$this->profileEndpointUrls = $regionObject->profileEndpointUrls;
+        $regionObject = new Regions();
+        $this->mwsServiceUrls = $regionObject->mwsServiceUrls;
+        $this->regionMappings = $regionObject->regionMappings;
+        $this->profileEndpointUrls = $regionObject->profileEndpointUrls;
     }
 
-    /* checkIfFileExists -  check if the JSON file exists in the path provided */
-
-    private function checkIfFileExists($config)
-    {
-	if(file_exists($config))
-	{
-	    $jsonString  = file_get_contents($config);
-	    $configArray = json_decode($jsonString, true);
-
-	    $jsonError = json_last_error();
-
-	    if ($jsonError != 0) {
-		$errorMsg = "Error with message - content is not in json format" . $this->getErrorMessageForJsonError($jsonError) . " " . $configArray;
-		throw new \Exception($errorMsg);
-	    }
-	} else {
-	    $errorMsg ='$config is not a Json File path or the Json File was not found in the path provided';
-	    throw new \Exception($errorMsg);
-	}
-	return $configArray;
-    }
-
-    /* Checks if the keys of the input configuration matches the keys in the config array
-     * if they match the values are taken else throws exception
-     * strict case match is not performed
+    /* Setter for sandbox
+     * Sets the Boolean value for config['sandbox'] variable
      */
 
-    private function checkConfigKeys($config)
+    public function setSandbox($value)
     {
-        $config = array_change_key_case($config, CASE_LOWER);
-	$config = $this->trimArray($config);
-
-        foreach ($config as $key => $value) {
-            if (array_key_exists($key, $this->config)) {
-                $this->config[$key] = $value;
-            } else {
-                throw new \Exception('Key ' . $key . ' is either not part of the configuration or has incorrect Key name.
-				check the config array key names to match your key names of your config array', 1);
-            }
+        if (is_bool($value)) {
+            $this->config->setSandbox($value);
+        } else {
+            throw new \Exception($value . ' is of type ' . gettype($value) . ' and should be a boolean value');
         }
+    }
+
+    /* Setter for config['client_id']
+     * Sets the value for config['client_id'] variable
+     */
+
+    public function setClientId($value)
+    {
+        if (!empty($value)) {
+            $this->config->setClientId($value);
+        } else {
+            throw new \Exception('setter value for client ID provided is empty');
+        }
+    }
+
+    /* Setter for Proxy
+     * input $proxy [array]
+     * @param $proxy['proxy_user_host'] - hostname for the proxy
+     * @param $proxy['proxy_user_port'] - hostname for the proxy
+     * @param $proxy['proxy_user_name'] - if your proxy required a username
+     * @param $proxy['proxy_user_password'] - if your proxy required a password
+     */
+
+    public function setProxy($proxy)
+    {
+        if (!empty($proxy['proxy_user_host']))
+            $this->config->setProxyHost($proxy['proxy_user_host']);
+
+        if (!empty($proxy['proxy_user_port']))
+            $this->config->setProxyPort($proxy['proxy_user_port']);
+
+        if (!empty($proxy['proxy_user_name']))
+            $this->config->setProxyUsername($proxy['proxy_user_name']);
+
+        if (!empty($proxy['proxy_user_password']))
+            $this->config->setProxyPassword($proxy['proxy_user_password']);
     }
 
     /* Convert a json error code to a descriptive error message
@@ -160,75 +139,13 @@ class Client implements ClientInterface
         }
     }
 
-    /* Setter for sandbox
-     * Sets the Boolean value for config['sandbox'] variable
-     */
-
-    public function setSandbox($value)
-    {
-        if (is_bool($value)) {
-            $this->config['sandbox'] = $value;
-        } else {
-            throw new \Exception($value . ' is of type ' . gettype($value) . ' and should be a boolean value');
-        }
-    }
-
-    /* Setter for config['client_id']
-     * Sets the value for config['client_id'] variable
-     */
-
-    public function setClientId($value)
-    {
-        if (!empty($value)) {
-            $this->config['client_id'] = $value;
-        } else {
-            throw new \Exception('setter value for client ID provided is empty');
-        }
-    }
-
-    /* Setter for Proxy
-     * input $proxy [array]
-     * @param $proxy['proxy_user_host'] - hostname for the proxy
-     * @param $proxy['proxy_user_port'] - hostname for the proxy
-     * @param $proxy['proxy_user_name'] - if your proxy required a username
-     * @param $proxy['proxy_user_password'] - if your proxy required a password
-     */
-
-    public function setProxy($proxy)
-    {
-	if (!empty($proxy['proxy_user_host']))
-	    $this->config['proxy_host'] = $proxy['proxy_user_host'];
-
-        if (!empty($proxy['proxy_user_port']))
-            $this->config['proxy_port'] = $proxy['proxy_user_port'];
-
-        if (!empty($proxy['proxy_user_name']))
-            $this->config['proxy_username'] = $proxy['proxy_user_name'];
-
-        if (!empty($proxy['proxy_user_password']))
-            $this->config['proxy_password'] = $proxy['proxy_user_password'];
-    }
-
     /* Setter for $mwsServiceUrl
      * Set the URL to which the post request has to be made for unit testing
      */
 
     public function setMwsServiceUrl($url)
     {
-	$this->mwsServiceUrl = $url;
-    }
-
-    /* Getter
-     * Gets the value for the key if the key exists in config
-     */
-
-    public function __get($name)
-    {
-        if (array_key_exists(strtolower($name), $this->config)) {
-            return $this->config[strtolower($name)];
-        } else {
-            throw new \Exception('Key ' . $name . ' is either not a part of the configuration array config or the' . $name . 'does not match the key name in the config array', 1);
-        }
+	    $this->mwsServiceUrl = $url;
     }
 
     /* Getter for parameters string
@@ -244,14 +161,14 @@ class Client implements ClientInterface
     
     private function trimArray($array)
     {
-	foreach ($array as $key => $value)
-	{
-	    if(!is_array($value) && $key!=='proxy_password')
-	    {
-		$array[$key] = trim($value);
-	    }
-	}
-	return $array;
+        foreach ($array as $key => $value)
+        {
+            if(!is_array($value) && $key!=='proxy_password')
+            {
+            $array[$key] = trim($value);
+            }
+        }
+        return $array;
     }
 
     /* GetUserInfo convenience function - Returns user's profile information from Amazon using the access token returned by the Button widget.
@@ -278,7 +195,7 @@ class Client implements ClientInterface
         $response = $httpCurlRequest->httpGet($url);
         $data 	  = json_decode($response);
 
-        if ($data->aud != $this->config['client_id']) {
+        if ($data->aud != $this->config->getClientId()) {
             // The access token does not belong to us
             throw new \Exception('The Access token entered is incorrect');
         }
@@ -373,18 +290,18 @@ class Client implements ClientInterface
     private function setDefaultValues($parameters, $fieldMappings, $requestParameters)
     {
         if (empty($requestParameters['merchant_id']))
-            $parameters['SellerId'] = $this->config['merchant_id'];
+            $parameters['SellerId'] = $this->config->getMerchantId();
 
         if (array_key_exists('platform_id', $fieldMappings)) {
-	    if (empty($requestParameters['platform_id']) && !empty($this->config['platform_id']))
-            $parameters[$fieldMappings['platform_id']] = $this->config['platform_id'];
+	    if (empty($requestParameters['platform_id']) && !empty($this->config->getPlatformId()))
+            $parameters[$fieldMappings['platform_id']] = $this->config->getPlatformId();
 	}
 
         if (array_key_exists('currency_code', $fieldMappings)) {
             if (!empty($requestParameters['currency_code'])) {
 		$parameters[$fieldMappings['currency_code']] = strtoupper($requestParameters['currency_code']);
             } else {
-                $parameters[$fieldMappings['currency_code']] = strtoupper($this->config['currency_code']);
+                $parameters[$fieldMappings['currency_code']] = strtoupper($this->config->getCurrencyCode());
             }
         }
 
@@ -402,11 +319,11 @@ class Client implements ClientInterface
 	$providerIndex = 0;
 	$providerString = 'ProviderCreditList.member.';
 
-        $fieldMappings = array(
-            'provider_id'   => 'ProviderId',
-            'credit_amount' => 'CreditAmount.Amount',
-            'currency_code' => 'CreditAmount.CurrencyCode'
-        );
+    $fieldMappings = array(
+        'provider_id'   => 'ProviderId',
+        'credit_amount' => 'CreditAmount.Amount',
+        'currency_code' => 'CreditAmount.CurrencyCode'
+    );
 
 	foreach ($providerCreditInfo as $key => $value)
 	 {
@@ -415,15 +332,15 @@ class Client implements ClientInterface
 
 	    foreach ($value as $param => $val)
 	    {
-		if (array_key_exists($param, $fieldMappings) && trim($val)!='') {
-		    $parameters[$providerString.$providerIndex. '.' .$fieldMappings[$param]] = $val;
-		}
+            if (array_key_exists($param, $fieldMappings) && trim($val)!='') {
+                $parameters[$providerString.$providerIndex. '.' .$fieldMappings[$param]] = $val;
+            }
 	    }
 
 	    // If currency code is not entered take it from the config array
 	    if(empty($parameters[$providerString.$providerIndex. '.' .$fieldMappings['currency_code']]))
 	    {
-		$parameters[$providerString.$providerIndex. '.' .$fieldMappings['currency_code']] = strtoupper($this->config['currency_code']);
+		    $parameters[$providerString.$providerIndex. '.' .$fieldMappings['currency_code']] = strtoupper($this->config->getCurrencyCode());
 	    }
 	}
 
@@ -462,7 +379,7 @@ class Client implements ClientInterface
 	    // If currency code is not entered take it from the config array
 	    if(empty($parameters[$providerString.$providerIndex. '.' .$fieldMappings['currency_code']]))
 	    {
-		$parameters[$providerString.$providerIndex. '.' .$fieldMappings['currency_code']] = strtoupper($this->config['currency_code']);
+		$parameters[$providerString.$providerIndex. '.' .$fieldMappings['currency_code']] = strtoupper($this->config->getCurrencyCode());
 	    }
 	}
 
@@ -1335,7 +1252,7 @@ class Client implements ClientInterface
 
     private function calculateSignatureAndParametersToString($parameters = array())
     {
-        $parameters['AWSAccessKeyId']   = $this->config['access_key'];
+        $parameters['AWSAccessKeyId']   = $this->config->getAccessKey();
         $parameters['Version']          = self::SERVICE_VERSION;
         $parameters['SignatureMethod']  = 'HmacSHA256';
         $parameters['SignatureVersion'] = 2;
@@ -1444,7 +1361,7 @@ class Client implements ClientInterface
             throw new \Exception("Non-supported signing method specified");
         }
 
-        return base64_encode(hash_hmac($hash, $data, $this->config['secret_key'], true));
+        return base64_encode(hash_hmac($hash, $data, $this->config->getSecretKey(), true));
     }
 
     /* Formats date as ISO 8601 timestamp */
@@ -1494,7 +1411,7 @@ class Client implements ClientInterface
                     } elseif ($statusCode == 500 || $statusCode == 503) {
 
 			$shouldRetry = true;
-                        if ($shouldRetry && strtolower($this->config['handle_throttle'])) {
+                        if ($shouldRetry && strtolower($this->config->isHandleThrottle())) {
                             $this->pauseOnRetry(++$retries, $statusCode);
                         }
                     } else {
@@ -1530,10 +1447,10 @@ class Client implements ClientInterface
 
     private function createServiceUrl()
     {
-        $this->modePath = strtolower($this->config['sandbox']) ? 'OffAmazonPayments_Sandbox' : 'OffAmazonPayments';
+        $this->modePath = strtolower($this->config->isSandbox()) ? 'OffAmazonPayments_Sandbox' : 'OffAmazonPayments';
 
-        if (!empty($this->config['region'])) {
-            $region = strtolower($this->config['region']);
+        if (!empty($this->config->getRegion())) {
+            $region = strtolower($this->config->getRegion());
             if (array_key_exists($region, $this->regionMappings)) {
                 $this->mwsEndpointUrl  = $this->mwsServiceUrls[$this->regionMappings[$region]];
                 $this->mwsServiceUrl   = 'https://' . $this->mwsEndpointUrl . '/' . $this->modePath . '/' . self::SERVICE_VERSION;
@@ -1550,10 +1467,10 @@ class Client implements ClientInterface
 
     private function profileEndpointUrl()
     {
-	$profileEnvt = strtolower($this->config['sandbox']) ? "api.sandbox" : "api";
+	$profileEnvt = strtolower($this->config->isSandbox()) ? "api.sandbox" : "api";
 	
-        if (!empty($this->config['region'])) {
-            $region = strtolower($this->config['region']);
+        if (!empty($this->config->getRegion())) {
+            $region = strtolower($this->config->getRegion());
 
 	    if (array_key_exists($region, $this->regionMappings) ) {
                 $this->profileEndpoint = 'https://' . $profileEnvt . '.' . $this->profileEndpointUrls[$region];
@@ -1569,7 +1486,7 @@ class Client implements ClientInterface
 
     private function constructUserAgentHeader()
     {
-        $this->userAgent = $this->quoteApplicationName($this->config['application_name']) . '/' . $this->quoteApplicationVersion($this->config['application_version']);
+        $this->userAgent = $this->quoteApplicationName($this->config->getApplicationName()) . '/' . $this->quoteApplicationVersion($this->config->getApplicationVersion());
         $this->userAgent .= ' (';
         $this->userAgent .= 'Language=PHP/' . phpversion();
         $this->userAgent .= '; ';
