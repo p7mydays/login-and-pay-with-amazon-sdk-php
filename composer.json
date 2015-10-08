@@ -1,5 +1,5 @@
 {
-   "name": "amzn/login-and-pay-with-amazon-sdk-php",
+   "name": "p7mydays/login-and-pay-with-amazon-sdk-php",
    "type": "library",
    "description": "Pay with Amazon SDK",
    "keywords": [
