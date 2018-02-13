@@ -1,4 +1,4 @@
-# Login and Pay with Amazon PHP SDK
+# Login and Pay with Amazon PHP SDK 
 Login and Pay with Amazon API Integration
 
 ## Requirements
