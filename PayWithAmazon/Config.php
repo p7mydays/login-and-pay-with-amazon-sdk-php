@@ -12,23 +12,30 @@ namespace PayWithAmazon;
  */
 class Config
 {
-    private $merchant_id          = null;
-    private $secret_key           = null;
-    private $access_key           = null;
-    private $region               = null;
-    private $currency_code        = null;
-    private $sandbox              = false;
-    private $platform_id          = null;
-    private $cabundle_file        = null;
-    private $application_name     = null;
-    private $application_version  = null;
-    private $proxy_host           = null;
-    private $proxy_port           = -1;
-    private $proxy_username       = null;
-    private $proxy_password       = null;
-    private $client_id            = null;
-    private $handle_throttle      = true;
-    private $ssl_verify           = true;
+    private $merchant_id = null;
+    private $secret_key = null;
+    private $access_key = null;
+    private $region = null;
+    private $currency_code = null;
+    private $sandbox = false;
+    private $platform_id = null;
+    private $cabundle_file = null;
+    private $application_name = null;
+    private $application_version = null;
+    private $proxy_host = null;
+    private $proxy_port = -1;
+    private $proxy_username = null;
+    private $proxy_password = null;
+    private $client_id = null;
+    private $handle_throttle = true;
+    private $ssl_verify = true;
+
+    public function __construct($data = [])
+    {
+        foreach ($data as $key => $value) {
+            $this->$key = $value;
+        }
+    }
 
     /**
      * @return null
