@@ -30,6 +30,10 @@ class Config
     private $handle_throttle = true;
     private $ssl_verify = true;
 
+    /**
+     * Config constructor.
+     * @param array $data
+     */
     public function __construct($data = [])
     {
         foreach ($data as $key => $value) {

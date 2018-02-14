@@ -1,4 +1,5 @@
 <?php
+
 namespace PayWithAmazon;
 
 /* Class HttpCurl
@@ -13,25 +14,24 @@ class HttpCurl implements HttpCurlInterface
     private $config;
     private $header = false;
     private $accessToken = null;
-    
+
     /* Takes user configuration array as input
      * Takes configuration for API call or IPN config
      */
-    
     public function __construct($config = null)
     {
         $this->config = $config;
     }
-    
+
     /* Setter for boolean header to get the user info */
-    
+
     public function setHttpHeader()
     {
         $this->header = true;
     }
-    
+
     /* Setter for Access token to get the user info */
-    
+
     public function setAccessToken($accesstoken)
     {
         $this->accessToken = $accesstoken;
@@ -45,8 +45,8 @@ class HttpCurl implements HttpCurlInterface
      * config['proxy_username']
      * config['proxy_password']
      */
-    
-    private  function commonCurlParams($url,$userAgent)
+
+    private function commonCurlParams($url, $userAgent)
     {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -54,65 +54,65 @@ class HttpCurl implements HttpCurlInterface
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $this->config->isSslVerify());
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        
+
         if (!is_null($this->config->getCabundleFile())) {
             curl_setopt($ch, CURLOPT_CAINFO, $this->config->getCabundleFile());
         }
-        
+
         if (!empty($userAgent))
             curl_setopt($ch, CURLOPT_USERAGENT, $userAgent);
-        
+
         if ($this->config->getProxyHost() != null && $this->config->getProxyPort() != -1) {
             curl_setopt($ch, CURLOPT_PROXY, $this->config->getProxyHost() . ':' . $this->config->getProxyPort());
         }
-        
+
         if ($this->config->getProxyUsername() != null && $this->config->getProxyPassword() != null) {
             curl_setopt($ch, CURLOPT_PROXYUSERPWD, $this->config->getProxyUsername() . ':' . $this->config->getProxyPassword());
         }
-        
+
         return $ch;
     }
-    
+
     /* POST using curl for the following situations
      * 1. API calls
      * 2. IPN certificate retrieval
      * 3. Get User Info
      */
-    
+
     public function httpPost($url, $userAgent = null, $parameters = null)
     {
-        $ch = $this->commonCurlParams($url,$userAgent);
-        
+        $ch = $this->commonCurlParams($url, $userAgent);
+
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $parameters);
         curl_setopt($ch, CURLOPT_HEADER, true);
-        
+
         $response = $this->execute($ch);
         return $response;
     }
-    
+
     /* GET using curl for the following situations
      * 1. IPN certificate retrieval
      * 2. Get User Info
      */
-    
+
     public function httpGet($url, $userAgent = null)
     {
-        $ch = $this->commonCurlParams($url,$userAgent);
-        
+        $ch = $this->commonCurlParams($url, $userAgent);
+
         // Setting the HTTP header with the Access Token only for Getting user info
         if ($this->header) {
             curl_setopt($ch, CURLOPT_HTTPHEADER, array(
                 'Authorization: bearer ' . $this->accessToken
             ));
         }
-        
+
         $response = $this->execute($ch);
         return $response;
     }
-    
+
     /* Execute Curl request */
-    
+
     private function execute($ch)
     {
         $response = '';

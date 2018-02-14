@@ -51,7 +51,7 @@ class IpnHandler implements IpnHandlerInterface
         );
 
         // Validate the IPN message header [x-amz-sns-message-type]
-         $this->validateHeaders();
+        $this->validateHeaders();
 
         // Converts the IPN [Message] to Notification object
         $this->getMessage();
@@ -61,13 +61,6 @@ class IpnHandler implements IpnHandlerInterface
 
         // Verifies the signature against the provided pem file in the IPN
         $this->constructAndVerifySignature();
-    }
-
-    private function logToFile($data)
-    {
-        $handler = fopen("/var/www/logs/amazonIpnLog.txt", "a");
-        fwrite($handler, $data . PHP_EOL);
-        fclose($handler);
     }
 
     private function checkConfigKeys($ipnConfig)
