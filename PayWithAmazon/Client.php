@@ -456,10 +456,14 @@ class Client implements ClientInterface
         $parameters['Action'] = 'ConfirmOrderReference';
         $requestParameters = array_change_key_case($requestParameters, CASE_LOWER);
 
-        $fieldMappings = array(
-            'merchant_id' => 'SellerId',
-            'amazon_order_reference_id' => 'AmazonOrderReferenceId',
-            'mws_auth_token' => 'MWSAuthToken'
+        $fieldMappings = array(            
+           'merchant_id' => 'SellerId',
+           'amazon_order_reference_id' => 'AmazonOrderReferenceId',
+           'amount' => 'OrderReferenceAttributes.OrderTotal.Amount',
+           'currency_code' => 'OrderReferenceAttributes.OrderTotal.CurrencyCode',
+           'mws_auth_token' => 'MWSAuthToken',
+           'success_url' =>  'SuccessUrl',
+           'failure_url' => 'FailureUrl'
         );
 
         $responseObject = $this->setParametersAndPost($parameters, $fieldMappings, $requestParameters);
